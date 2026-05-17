@@ -3,6 +3,18 @@
   "description": "Pipeline that walks a feature branch from base-branch setup through brainstorming, Codex review, CodeRabbit review, and merge handoff. Wraps superpowers + codex skills.",
   "version": "0.1.0",
   "author": {
-    "name": "Thien"
+    "name": "Yuntian",
+    "url": "https://github.com/yuntian3008"
+  },
+  "homepage": "https://github.com/yuntian3008/through-shower",
+  "repository": "https://github.com/yuntian3008/through-shower",
+  "userConfig": {
+    "slack_recipient": {
+      "type": "string",
+      "title": "Slack recipient (optional)",
+      "description": "Recipient key resolved by the send-slack-message skill's recipients.md (e.g., \"mike\"). Leave empty to disable the Stage 6 Slack ping option — Stage 6 will just announce ready-to-merge.",
+      "required": false,
+      "default": ""
+    }
   }
 }
