@@ -103,7 +103,7 @@ PR_NUMBER=$(gh pr view --json number -q .number)
    **Commits pushed during this turn:** `<sha-short>`, `<sha-short>` (if any)
 
    ---
-   *Posted by [thought-shower](https://github.com/yuntian3008/thought-shower).*
+   *Posted by thought-shower.*
    ```
 
    Rules:
