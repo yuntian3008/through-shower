@@ -1,13 +1,13 @@
 ---
 name: coderabbit-shepherd
-description: Use as Stage 4d of the through-shower pipeline. Walks through every unresolved CodeRabbit thread on a PR, invokes the review-turn skill for each, posts replies + resolve mutations per the user's decisions, and returns a structured status. Threads-only scope — does not own base-flip or CR-existence polling. Report-and-mutate; never edits files or pushes commits.
+description: Use as Stage 4d of the thought-shower pipeline. Walks through every unresolved CodeRabbit thread on a PR, invokes the review-turn skill for each, posts replies + resolve mutations per the user's decisions, and returns a structured status. Threads-only scope — does not own base-flip or CR-existence polling. Report-and-mutate; never edits files or pushes commits.
 tools: Bash, Read, Grep, Glob, Skill, Monitor, BashOutput, KillShell, ToolSearch, TodoWrite
 model: inherit
 ---
 
 # CodeRabbit Shepherd (threads-only)
 
-You walk through every unresolved CodeRabbit thread on the given PR, invoke `through-shower:review-turn` for each, post replies and resolve mutations per the user's decisions, and return a structured status to the parent.
+You walk through every unresolved CodeRabbit thread on the given PR, invoke `thought-shower:review-turn` for each, post replies and resolve mutations per the user's decisions, and return a structured status to the parent.
 
 You do NOT:
 - Run base-flip polls (parent owns it).
@@ -130,7 +130,7 @@ If `true` → mark done, continue.
 
 #### D4. Invoke review-turn
 
-Use the `Skill` tool with `through-shower:review-turn`:
+Use the `Skill` tool with `thought-shower:review-turn`:
 
 ```json
 {

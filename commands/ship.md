@@ -1,10 +1,10 @@
 ---
-description: Stages 2–6 of through-shower. From a branch with committed code, run finishing → Codex review → CodeRabbit review → ready-to-merge → ask user to ping Mike or end. Idempotent — safe to re-run.
+description: Stages 2–6 of thought-shower. From a branch with committed code, run finishing → Codex review → CodeRabbit review → ready-to-merge → ask user to ping Mike or end. Idempotent — safe to re-run.
 ---
 
-# /through-shower:ship
+# /thought-shower:ship
 
-Run **Stages 2–6** of the through-shower pipeline.
+Run **Stages 2–6** of the thought-shower pipeline.
 
 ## Preflight (fail fast)
 
@@ -67,7 +67,7 @@ PR_NUMBER=$(gh pr view --json number -q .number)
    - `subagent_type: "codex:codex-rescue"`
    - prompt: `Review the diff of PR #<PR_NUMBER> against base <RECORDED_BASE>. Report findings grouped by severity.`
 3. When `codex:codex-rescue` returns, the findings text is the agent's final message.
-4. Invoke the `Skill` tool with `through-shower:review-turn` and pass `{reviewer: "codex", findings: <agent output>}`. The skill will:
+4. Invoke the `Skill` tool with `thought-shower:review-turn` and pass `{reviewer: "codex", findings: <agent output>}`. The skill will:
    - Apply `superpowers:receiving-code-review` discipline (verify before agreeing).
    - Group by severity, present per-item recommendations to the user.
    - Wait for user decisions (fix / decline / defer / other) per item.
@@ -88,7 +88,7 @@ PR_NUMBER=$(gh pr view --json number -q .number)
    Compose the body using data from the FINAL round only (re-runs supersede earlier rounds). Use the HTML marker so the comment is identifiable later:
 
    ```
-   <!-- through-shower:codex-turn -->
+   <!-- thought-shower:codex-turn -->
 
    ## 🤖 Codex review turn
 
@@ -105,17 +105,17 @@ PR_NUMBER=$(gh pr view --json number -q .number)
    **Commits pushed during this turn:** `<sha-short>`, `<sha-short>` (if any)
 
    ---
-   *Posted by [through-shower](https://github.com/yuntian3008/through-shower).*
+   *Posted by [thought-shower](https://github.com/yuntian3008/thought-shower).*
    ```
 
    Rules:
    - If the final round had **0 findings**, post a one-liner: `Codex reviewed `<sha-short>` — no actionable findings.` (still with the HTML marker)
    - The `<sha-short>` values use `git rev-parse --short=8 <sha>` so they're stable links.
    - Commits-pushed list = `git log --format='%h' <HEAD_AT_CODEX_START>..<CURRENT_HEAD>`.
-   - If a Codex-turn comment with the `<!-- through-shower:codex-turn -->` marker already exists on this PR (e.g., user re-ran /ship), **update it** with the new body instead of posting a duplicate:
+   - If a Codex-turn comment with the `<!-- thought-shower:codex-turn -->` marker already exists on this PR (e.g., user re-ran /ship), **update it** with the new body instead of posting a duplicate:
      ```bash
      existing=$(gh api "repos/$OWNER_REPO/issues/$PR_NUMBER/comments" \
-       --jq '[ .[] | select(.body | startswith("<!-- through-shower:codex-turn -->")) ][0].id // empty')
+       --jq '[ .[] | select(.body | startswith("<!-- thought-shower:codex-turn -->")) ][0].id // empty')
      if [ -n "$existing" ]; then
        gh api -X PATCH "repos/$OWNER_REPO/issues/comments/$existing" -f body="$BODY"
      else

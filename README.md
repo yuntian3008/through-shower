@@ -1,4 +1,4 @@
-# through-shower
+# thought-shower
 
 A Claude Code plugin that walks a feature branch from "I have an idea" to "ready to merge". Six stages, three slash commands, one shared review pattern. Reuses the `superpowers` and `codex` skills rather than reinventing them.
 
@@ -18,14 +18,14 @@ Each stage has a clear exit condition. The plugin holds your hand only where the
 This plugin is not yet on the official Claude Code marketplace. Install locally:
 
 ```bash
-git clone https://github.com/yuntian3008/through-shower.git
-claude --plugin-dir ./through-shower
+git clone https://github.com/yuntian3008/thought-shower.git
+claude --plugin-dir ./thought-shower
 ```
 
 Or symlink into your local plugins directory and use it across sessions:
 
 ```bash
-git clone https://github.com/yuntian3008/through-shower.git ~/.claude/plugins/local/through-shower
+git clone https://github.com/yuntian3008/thought-shower.git ~/.claude/plugins/local/thought-shower
 # in any Claude Code session:
 /reload-plugins
 ```
@@ -51,11 +51,11 @@ No user settings to configure. The plugin is hands-off at Stage 6 — it prints 
 
 | Command | Use |
 | --- | --- |
-| `/through-shower:start [--lite] <description>` | Stage 1 only. Picks base branch, infers `<type>/<slug>`, creates the branch, invokes `superpowers:brainstorming` (or `brainstorming-lite` with `--lite`). |
-| `/through-shower:ship` | Stages 2–6 from the current branch. Idempotent — safe to re-run after pushing fixes. |
-| `/through-shower:auto <description>` (alias of `/through-shower:through-shower`) | Auto-chains `/start` then `/ship` in one session. For trivially small features only. The `auto` name sorts first alphabetically in the picker. Implemented as a symlink — **Windows users** must clone with `core.symlinks=true` (requires Developer Mode or admin) or this command will be broken. |
-| `/through-shower:status` | Read-only state report: branch, PR, draft state, CR review state, threads, checks. Infers the next stage. |
-| `/through-shower:resume` | Detects current stage from git + GitHub, prints it, asks "continue?". |
+| `/thought-shower:start [--lite] <description>` | Stage 1 only. Picks base branch, infers `<type>/<slug>`, creates the branch, invokes `superpowers:brainstorming` (or `brainstorming-lite` with `--lite`). |
+| `/thought-shower:ship` | Stages 2–6 from the current branch. Idempotent — safe to re-run after pushing fixes. |
+| `/thought-shower:auto <description>` (alias of `/thought-shower:thought-shower`) | Auto-chains `/start` then `/ship` in one session. For trivially small features only. The `auto` name sorts first alphabetically in the picker. Implemented as a symlink — **Windows users** must clone with `core.symlinks=true` (requires Developer Mode or admin) or this command will be broken. |
+| `/thought-shower:status` | Read-only state report: branch, PR, draft state, CR review state, threads, checks. Infers the next stage. |
+| `/thought-shower:resume` | Detects current stage from git + GitHub, prints it, asks "continue?". |
 
 ## Pipeline
 
@@ -100,10 +100,10 @@ Reused by both the Codex turn (Stage 3) and the CodeRabbit subagent (Stage 4).
 ## Layout
 
 ```
-through-shower/
+thought-shower/
 ├── .claude-plugin/plugin.json
 ├── README.md
-├── commands/{auto,start,ship,through-shower,status,resume}.md
+├── commands/{auto,start,ship,thought-shower,status,resume}.md
 ├── skills/review-turn/SKILL.md
 ├── skills/visualize-as-html/{SKILL.md, references/{patterns.md, template.html}}
 ├── agents/coderabbit-shepherd.md
@@ -122,7 +122,7 @@ The `coderabbit-shepherd` agent reads `references/pitfalls.md` on demand. Highli
 - Subagents cannot spawn other subagents; the `coderabbit-shepherd` agent has no `Agent` tool.
 - Always `KillShell` every background poll before the agent returns.
 
-## Why "through-shower"?
+## Why "thought-shower"?
 
 A play on "PR shepherd" — but the agent washes the PR through a pipeline rather than herding it. Also disambiguates from any other `pr-shepherd` in your `~/.claude/agents/`.
 

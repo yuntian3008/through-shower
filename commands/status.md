@@ -1,8 +1,8 @@
 ---
-description: Read-only inspection of the through-shower pipeline state on the current branch. Reports git + GitHub state and the inferred next stage. No side effects.
+description: Read-only inspection of the thought-shower pipeline state on the current branch. Reports git + GitHub state and the inferred next stage. No side effects.
 ---
 
-# /through-shower:status
+# /thought-shower:status
 
 Read-only state report. No actions, no prompts.
 
@@ -46,7 +46,7 @@ gh api "repos/$(gh repo view --json nameWithOwner -q .nameWithOwner)/pulls/$PR_N
 Print a single block. Example output:
 
 ```
-through-shower status
+thought-shower status
 
 Branch:        feat/community-stats-endpoint
 Upstream:      origin/feat/community-stats-endpoint
@@ -62,15 +62,15 @@ CodeRabbit:    review posted on current HEAD
   Threads:     3 unresolved
 Checks:        4 PASS, 0 FAIL, 0 PENDING
 
-Inferred next stage: Stage 4 — resolve CR threads (run /through-shower:ship)
+Inferred next stage: Stage 4 — resolve CR threads (run /thought-shower:ship)
 ```
 
 ## Inferred-next-stage decision tree
 
 | Condition | Next stage |
 | --- | --- |
-| No PR exists, no commits ahead | Stage 1 (run `/through-shower:start`) |
-| No PR exists, commits ahead | Stage 2 (run `/through-shower:ship`) |
+| No PR exists, no commits ahead | Stage 1 (run `/thought-shower:start`) |
+| No PR exists, commits ahead | Stage 2 (run `/thought-shower:ship`) |
 | Draft PR + base != dev | Stage 4a (waiting for base flip) |
 | Draft PR + base == dev OR ready PR + no CR review on current HEAD | Stage 4b/c (CR phase) |
 | CR review posted + unresolved threads > 0 | Stage 4d (resolve threads) |
@@ -78,11 +78,11 @@ Inferred next stage: Stage 4 — resolve CR threads (run /through-shower:ship)
 | All clear | Stage 6 (merge handoff) |
 | Stage detection fails (e.g., gh not authenticated) | Report the failure literally; do not guess |
 
-**Codex detection.** Look for a PR comment whose body starts with the marker `<!-- through-shower:codex-turn -->`:
+**Codex detection.** Look for a PR comment whose body starts with the marker `<!-- thought-shower:codex-turn -->`:
 
 ```bash
 gh api "repos/$OWNER_REPO/issues/$PR_NUMBER/comments" \
-  --jq '[ .[] | select(.body | startswith("<!-- through-shower:codex-turn -->")) ] | length'
+  --jq '[ .[] | select(.body | startswith("<!-- thought-shower:codex-turn -->")) ] | length'
 ```
 
 If `> 0` → Codex turn done. If `0` → unknown (Codex either hasn't run, or ran but the comment wasn't posted). Report says `unknown` and recommends re-running `/ship` (Stage 3 is fast and idempotent — the comment posting will update in place if it already exists).

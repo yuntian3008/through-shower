@@ -1,17 +1,17 @@
 ---
-description: Stage 1 of through-shower. Pick a base branch, create a feature branch from a description (auto-inferred type+slug), then invoke superpowers:brainstorming. Pass --lite as the first arg to use brainstorming-lite instead.
+description: Stage 1 of thought-shower. Pick a base branch, create a feature branch from a description (auto-inferred type+slug), then invoke superpowers:brainstorming. Pass --lite as the first arg to use brainstorming-lite instead.
 ---
 
-# /through-shower:start [--lite] $ARGUMENTS
+# /thought-shower:start [--lite] $ARGUMENTS
 
-Run **Stage 1** of the through-shower pipeline: branch setup + brainstorming kickoff.
+Run **Stage 1** of the thought-shower pipeline: branch setup + brainstorming kickoff.
 
 ## Preflight (fail fast)
 
 Before doing anything else, verify required dependencies are loaded. If ANY are missing, stop and report:
 
 ```
-through-shower preflight failed. Missing: <list>
+thought-shower preflight failed. Missing: <list>
 Install: superpowers, codex
 ```
 
@@ -122,11 +122,11 @@ Use the `Skill` tool:
 
 Pass `<description>` as the topic.
 
-When brainstorming + execution finishes and code is on the branch, the user runs `/through-shower:ship`. Do not auto-chain — `/ship` is a separate command.
+When brainstorming + execution finishes and code is on the branch, the user runs `/thought-shower:ship`. Do not auto-chain — `/ship` is a separate command.
 
 ## On completion
 
 Print a one-line confirmation:
 ```
-Stage 1 done. Branch: <type>/<slug> (base: <BASE>). When code is committed, run /through-shower:ship.
+Stage 1 done. Branch: <type>/<slug> (base: <BASE>). When code is committed, run /thought-shower:ship.
 ```

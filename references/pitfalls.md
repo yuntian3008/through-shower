@@ -1,4 +1,4 @@
-# Pitfalls — through-shower lessons learned
+# Pitfalls — thought-shower lessons learned
 
 Hard-won notes from prior pr-shepherd incidents. The agent reads this file when a poll fails or it needs to debug.
 

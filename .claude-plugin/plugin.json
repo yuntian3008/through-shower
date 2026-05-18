@@ -1,11 +1,11 @@
 {
-  "name": "through-shower",
+  "name": "thought-shower",
   "description": "Pipeline that walks a feature branch from base-branch setup through brainstorming, Codex review, CodeRabbit review, and merge handoff. Wraps superpowers + codex skills.",
   "version": "0.1.0",
   "author": {
     "name": "Yuntian",
     "url": "https://github.com/yuntian3008"
   },
-  "homepage": "https://github.com/yuntian3008/through-shower",
-  "repository": "https://github.com/yuntian3008/through-shower"
+  "homepage": "https://github.com/yuntian3008/thought-shower",
+  "repository": "https://github.com/yuntian3008/thought-shower"
 }
