@@ -53,7 +53,7 @@ No user settings to configure. The plugin is hands-off at Stage 6 — it prints 
 | --- | --- |
 | `/through-shower:start [--lite] <description>` | Stage 1 only. Picks base branch, infers `<type>/<slug>`, creates the branch, invokes `superpowers:brainstorming` (or `brainstorming-lite` with `--lite`). |
 | `/through-shower:ship` | Stages 2–6 from the current branch. Idempotent — safe to re-run after pushing fixes. |
-| `/through-shower:auto <description>` (alias of `/through-shower:through-shower`) | Auto-chains `/start` then `/ship` in one session. For trivially small features only. The `auto` name sorts first alphabetically in the picker. |
+| `/through-shower:auto <description>` (alias of `/through-shower:through-shower`) | Auto-chains `/start` then `/ship` in one session. For trivially small features only. The `auto` name sorts first alphabetically in the picker. Implemented as a symlink — **Windows users** must clone with `core.symlinks=true` (requires Developer Mode or admin) or this command will be broken. |
 | `/through-shower:status` | Read-only state report: branch, PR, draft state, CR review state, threads, checks. Infers the next stage. |
 | `/through-shower:resume` | Detects current stage from git + GitHub, prints it, asks "continue?". |
 
