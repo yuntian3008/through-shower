@@ -157,9 +157,9 @@ isDraft=$(gh pr view <number> --json isDraft -q .isDraft)
 [ "$isDraft" = "true" ] && gh pr ready <number>
 ```
 
-### 4c. Existing-status short-circuit
+### 4c. Wait for CR commit status
 
-Check CR's commit status on the current HEAD before starting any poll:
+Check CR's commit status on the current HEAD:
 
 ```bash
 OWNER_REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner)
@@ -170,13 +170,11 @@ case "$cr_state" in
 esac
 ```
 
-- `success` → skip the poll, proceed to 4e.
-- `failure` → surface and stop (see 4d failure handling).
-- `pending` or `<none>` → fall through to 4d's timed poll.
+- `success` → CR has finished. Proceed to 4d.
+- `failure` → surface and stop.
+- `pending` or `<none>` → poll until resolved (see below).
 
-### 4d. CR-status timed poll (hard 30-min cap)
-
-Run the poll script as Monitor's command (no separate background Bash):
+**Poll (hard 30-min cap):**
 
 ```
 Monitor(
@@ -191,10 +189,22 @@ Monitor(
 
 The Monitor event will contain one of:
 
-- `CR_REVIEW_POSTED` → proceed to 4e.
+- `CR_REVIEW_POSTED` → proceed to 4d.
 - `CR_REVIEW_FAILED: <description>` → stop, report.
 - `CR_TIMEOUT` → stop. Report: `CodeRabbit did not post a status within 30 min — verify the CodeRabbit GitHub App is installed and active on this repo.`
 - `FILTER_BROKEN: ...` → stop. Re-run the script in foreground for the error text. See `references/pitfalls.md`.
+
+### 4d. Thread check
+
+After CR finishes (regardless of commit-status value), count unresolved threads:
+
+```bash
+UNRESOLVED=$("${CLAUDE_PLUGIN_ROOT}/scripts/cr-threads.sh" "$PR_NUMBER" \
+  | jq '[ .[] | select(.isResolved == false) ] | length')
+```
+
+- `UNRESOLVED === 0` → no threads to resolve, skip 4e, proceed to Stage 5.
+- `UNRESOLVED > 0` → proceed to 4e.
 
 ### 4e. Dispatch coderabbit-shepherd subagent
 
@@ -243,6 +253,6 @@ Do NOT merge the PR yourself. Ever. The plugin is hands-off at this stage — no
 
 - Stage 2 is a no-op if the draft PR already exists.
 - Stage 3 always runs at least once per /ship invocation.
-- Stage 4 re-runs base-flip + CR poll if base or HEAD changed; otherwise skips to subagent dispatch.
+- Stage 4 re-runs base-flip + CR poll if base or HEAD changed; thread check always runs before deciding whether to dispatch the shepherd.
 - Stage 5 is pure read.
 - Stage 6 only prints the ready-to-merge summary.
