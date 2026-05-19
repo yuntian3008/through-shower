@@ -34,7 +34,7 @@ Build `ROUTING_TABLE` — a list of `{type, path, when, format}` entries, preser
    | Type | Path | When | Format |
    |---|---|---|---|
    | gotchas | auto | Scope = a single folder or file (folder-specific quirk) | Append `- YYYY-MM-DD: <lesson> (commit <short-hash>)` to nearest `<folder>/AGENTS.md ## Gotchas`. Create section if missing. |
-   | memory | auto | Personal preference or cross-project insight | New file with frontmatter (name, description, type) in user memory dir. Update MEMORY.md index. |
+   | memory | auto | Personal preference, cross-project insight, or user correction that should persist across sessions | Write to the agent's built-in memory system (e.g. Claude Code auto-memory, Cursor memory). This is the native memory feature of the agentic coding tool, not a repo file. No commit — memory lives outside the repo. |
 
 3. **Scan the repo** for directories that look like learning destinations:
 
