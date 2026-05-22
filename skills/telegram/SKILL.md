@@ -21,17 +21,19 @@ Connect this Claude Code session to a Telegram topic for bidirectional messaging
 
 4. **Ensure inbox file exists** — run `touch ~/.claude/thought-shower/telegram-bridge/inbox/<worktree-name>.jsonl` (sanitize the name: replace non-alphanumeric chars except `-` and `_` with `_`).
 
-5. **Check for existing Monitor** — run `pgrep -f "tail -f.*<worktree-name>.jsonl"`. If a process is found, another session is already monitoring this inbox. Skip step 6 — you can still send replies via step 7 but will not receive messages (the other session handles that). Tell the user: "Another session is already monitoring Telegram for this worktree. This session can send but not receive."
+5. **Check for existing Monitor** — run `pgrep -f "tail -f.*<worktree-name>.jsonl"`. If a process is found, another session is already monitoring this inbox. Skip steps 6 and 7 — you can still send replies via step 8 but will not receive messages (the other session handles that). Tell the user: "Another session is already monitoring Telegram for this worktree. This session can send but not receive."
 
-6. **Start Monitor** — use the Monitor tool on: `tail -f ~/.claude/thought-shower/telegram-bridge/inbox/<worktree-name>.jsonl`
+6. **Clear inbox** — run `> ~/.claude/thought-shower/telegram-bridge/inbox/<worktree-name>.jsonl` to start fresh. Only reached when no existing Monitor was found in step 5.
 
-7. **Handle incoming messages** — each Monitor notification is a JSON line:
+7. **Start Monitor** — use the Monitor tool on: `tail -f ~/.claude/thought-shower/telegram-bridge/inbox/<worktree-name>.jsonl`
+
+8. **Handle incoming messages** — each Monitor notification is a JSON line:
    ```json
    {"from":"Thien","text":"message here","ts":1716388800,"messageId":42}
    ```
    Read the message, understand it in the context of the current project, and respond helpfully.
 
-8. **Send replies** — use the `send_telegram` MCP tool with the reply text. This is the preferred method. Fallback if the MCP tool is unavailable:
+9. **Send replies** — use the `send_telegram` MCP tool with the reply text. This is the preferred method. Fallback if the MCP tool is unavailable:
    ```bash
    bun ~/wp/plugins/thought-shower/scripts/telegram-bridge/cli.ts send <reply text>
    ```

@@ -119,9 +119,6 @@ async function init() {
   const bot = new TelegramBot(config.botToken);
   const sessions = await loadSessions();
 
-  await ensureDirs();
-  await Bun.write(inboxPath(name), "");
-
   if (sessions[name]) {
     await setActive(name);
     console.log(
