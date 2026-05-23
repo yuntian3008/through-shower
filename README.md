@@ -1,25 +1,20 @@
 # thought-shower
 
-A personal Claude Code plugin — commands, pipelines, and skills bundled together as one software engineer's workflow. The first piece is a 6-stage shipping pipeline that walks a feature branch from "I have an idea" to "ready to merge". More workflow pieces (commands, skills, pipelines) will land as the workflow evolves.
+A personal Claude Code plugin bundling one engineer's software-engineering workflow — commands, skills, subagents, and an MCP bridge in one installable unit. Each piece is meant to make a real SWE task faster or more disciplined: less context-switching, fewer dropped checks, better review hygiene.
 
-> Status: **v0.1.0 — early.** The shipping pipeline is designed end-to-end but not yet battle-tested. Expect rough edges on first run, and expect new pieces to arrive over time. Issues and PRs welcome.
+> Status: **early & evolving.** See [`CHANGELOG.md`](./CHANGELOG.md) for what landed and when. Issues and PRs welcome.
 
-## What's in the box today
+## What it gives you
 
-- **Shipping pipeline** (`/start` + `/ship`) — six stages from blank branch to ready-to-merge. Detailed below.
-- **`brainstorming-lite` skill** — same discipline as full brainstorming, no written spec. Used by `/start --lite`.
-- **`prompt` skill** — generate raw prompt material as input for brainstorming. Saves to `.prompts/`.
-- **`learn` skill** — extract session learnings and route them to canonical homes via `CANONICAL.md`.
-- **`review-turn` skill** — shared review-feedback discipline used by every reviewer turn.
-- **`visualize-as-html` skill** — produce a self-contained HTML artifact when a rendered page beats markdown.
-- **Telegram bridge** (`telegram-on` / `telegram-off`) — receive and send messages via Telegram while away from the terminal. MCP tools: `send_telegram`, `ask_telegram`, `send_photo` (≤10 MB), `send_document` (≤50 MB). Inbound media lands in `~/.claude/thought-shower/telegram-bridge/inbox-media/<session>/`.
+Five capabilities, each built from a mix of commands, skills, subagents, and MCP tools:
 
-```
-1. Branch setup     2. Finishing          3. Codex review
-4. CodeRabbit       5. Ready-to-merge     6. Merge handoff
-```
+- **Ship a feature end-to-end** — 6-stage pipeline from blank branch to "ready to merge", with brainstorming, Codex review, and CodeRabbit review wired in.
+- **Brainstorm with discipline** — structured ideation that doesn't skip context exploration, alternatives, or section-by-section approval.
+- **Reach me on Telegram** — send and receive messages + media (photos ≤10 MB, documents ≤50 MB) via an MCP bridge while away from the terminal.
+- **Capture session learnings** — extract non-obvious takeaways and route them to canonical homes (gotchas, rules, memory, pitfalls).
+- **Visualize on demand** — produce self-contained HTML artifacts when a rendered page beats markdown.
 
-Each pipeline stage has a clear exit condition. The plugin holds your hand only where discipline matters (no performative agreement on review feedback, verify-before-claim on every check) and gets out of the way otherwise.
+The plugin holds your hand only where discipline matters (no performative agreement on review feedback, verify-before-claim on every check) and gets out of the way otherwise.
 
 ## Install
 
@@ -50,65 +45,105 @@ The plugin runs a preflight check on every command and fails fast if any are mis
 
 `gh` must be authenticated (`gh auth status`). CodeRabbit must be installed on the target repo — Stage 4 hard-requires it and will time out at 30 min if no review posts.
 
-## Configuration
+## Capabilities
 
-No user settings to configure. The plugin is hands-off at Stage 6 — it prints a "ready to merge" summary and stops. Send notifications and merge on your own.
+### Ship a feature end-to-end
 
-## Commands
+The largest capability today. Six stages, two entry points (`/start` for Stage 1, `/ship` for Stages 2–6). Idempotent — safe to re-run.
+
+| Stage | What happens | Owner |
+| --- | --- | --- |
+| 1. Branch setup | Pick base branch (default `dev`), infer type+slug from description, `git switch -c <type>/<slug> <base>`, invoke brainstorming (or `brainstorming-lite` with `--lite`). Refuses on dirty tree. | `/start` |
+| 2. Finishing | `superpowers:finishing-a-development-branch`; auto-derives PR title+body from branch name + commits; creates draft PR. | `/ship` |
+| 3. Codex turn | Dispatches `codex:codex-rescue` once → `review-turn` triages findings → user fixes → asks "re-run on new HEAD, or move to CR?" → on move-on, posts a summary comment documenting the round so later reviewers see it. | `/ship` |
+| 4. CodeRabbit turn | Parent runs base-flip + CR-existence polls. Subagent (`coderabbit-shepherd`) runs the thread-resolution loop with `review-turn` per thread + GraphQL resolve mutation. Returns `{status: 'all_resolved' \| 'head_changed' \| 'failed'}`. | `/ship` + `coderabbit-shepherd` |
+| 5. Ready-to-merge | Verifies `state==OPEN`, `isDraft==false`, `baseRef==dev`, all checks green. | `/ship` |
+| 6. Merge handoff | Prints a "ready to merge" summary (title, URL, status) and stops. Never auto-merges. Notifications and merge are your responsibility. | `/ship` |
+
+### Brainstorm with discipline
+
+- **`prompt`** — generate raw prompt material as input for brainstorming. Saves to `.prompts/`.
+- **`brainstorming-lite`** — same discipline as full `superpowers:brainstorming` (context exploration, one-question-at-a-time clarification, 2–3 approaches with tradeoffs, section-by-section approval) but skips the written spec file and the `writing-plans` handoff. Used by `/start --lite`.
+
+### Reach me on Telegram
+
+MCP bridge backed by a long-running daemon. State lives in `~/.claude/thought-shower/telegram-bridge/` (outside the plugin cache so it survives `/plugin update`). Sessions are keyed by worktree basename.
+
+Skills:
+
+- **`telegram`** — first-time setup (bot token, group, topic discovery).
+- **`telegram-on`** / **`telegram-off`** — start/stop receiving messages in the current session.
+
+MCP tools (auto-loaded when the plugin is installed):
+
+- **`send_telegram`** — post a message to your topic.
+- **`ask_telegram`** — post a question and block until you reply. Free-text reply OR a media caption both work — caption becomes the answer.
+- **`send_photo`** (≤10 MB) / **`send_document`** (≤50 MB) — multipart upload with a size pre-check.
+- **`telegram_init`** / **`telegram_daemon`** / **`telegram_seen`** — internal lifecycle helpers.
+
+Inbound photos and documents are downloaded to `inbox-media/<session>/` (TTL 7 days) and surfaced to the agent via an optional `media` field on the inbox JSONL line.
+
+### Capture session learnings
+
+**`learn`** — extract non-obvious learnings from the current session and route each to its canonical home as declared in the project's `CANONICAL.md`. If `CANONICAL.md` is missing, scaffolds one interactively. Two destinations are always available: gotchas (folder-level `AGENTS.md ## Gotchas`) and memory (the agent's built-in memory system). Typical routing also covers project rules (`.agents/rules/`) and pitfalls (`references/pitfalls.md`).
+
+### Visualize on demand
+
+**`visualize-as-html`** — auto-invokes when the user asks to *visualize*, *compare*, *present*, *dashboard*, *sketch*, or *walk through* something that would be richer as a rendered page than as markdown. Produces a single self-contained `.html` file in `/tmp` (inline CSS + JS + SVG, no CDN, no trackers, system fonts only, dark-mode honest) and opens it in the default browser.
+
+Patterns come from [ThariqS/html-effectiveness](https://github.com/ThariqS/html-effectiveness) — ~20 curated artifact types (status reports, incident timelines, flowcharts, implementation plans, comparison sheets, etc.). Independent of the shipping pipeline — use any time.
+
+## Reference
+
+### Commands
 
 | Command | Use |
 | --- | --- |
-| `/thought-shower:start [--lite] <description>` | Stage 1 only. Picks base branch, infers `<type>/<slug>`, creates the branch, invokes brainstorming (or `brainstorming-lite` with `--lite`). |
-| `/thought-shower:ship` | Stages 2–6 from the current branch. Idempotent — safe to re-run after pushing fixes. |
+| `/thought-shower:start [--lite] <description>` | Stage 1. Pick base, infer `<type>/<slug>`, create branch, invoke brainstorming. |
+| `/thought-shower:ship` | Stages 2–6 from the current branch. Idempotent — safe to re-run. |
 | `/thought-shower:thought-shower <description>` | Auto-chains `/start` then `/ship` in one session. For trivially small features only. |
 | `/thought-shower:status` | Read-only state report: branch, PR, draft state, CR review state, threads, checks. Infers the next stage. |
 | `/thought-shower:resume` | Detects current stage from git + GitHub, prints it, asks "continue?". |
 
-## Shipping pipeline
+### Skills
 
-The current centerpiece. Future versions may add other pipelines for other workflows.
+| Skill | Purpose |
+| --- | --- |
+| `brainstorming-lite` | Brainstorm with full discipline but no written spec file. |
+| `prompt` | Generate raw prompt material as input for brainstorming. |
+| `learn` | Route session learnings via `CANONICAL.md`. |
+| `review-turn` | Shared review-feedback discipline reused by Codex (Stage 3) and CodeRabbit (Stage 4) turns. |
+| `visualize-as-html` | Produce a self-contained HTML artifact. |
+| `telegram` / `telegram-on` / `telegram-off` | Telegram bridge setup + per-session controls. |
 
-| Stage | What happens | Owner |
+### MCP tools
+
+Provided by the bundled `mcp-server.ts` (Telegram bridge). Auto-registered via `.mcp.json` when the plugin is installed.
+
+| Tool | Use |
+| --- | --- |
+| `send_telegram` | Post a message. |
+| `ask_telegram` | Post a question, block until reply (free text or media caption). |
+| `send_photo` | Multipart photo upload, ≤10 MB. |
+| `send_document` | Multipart document upload, ≤50 MB. |
+| `telegram_init` / `telegram_daemon` / `telegram_seen` | Internal lifecycle helpers. |
+
+### Agents
+
+| Agent | Caller | Use |
 | --- | --- | --- |
-| 1. Branch setup | Pick base branch (default `dev`), infer type+slug from description, `git switch -c <type>/<slug> <base>`, invoke brainstorming (or brainstorming-lite with `--lite`). Refuses on dirty tree. | `/start` |
-| 2. Finishing | `superpowers:finishing-a-development-branch`; auto-derives PR title+body from branch name + commits; creates draft PR. | `/ship` |
-| 3. Codex turn | Dispatches `codex:codex-rescue` once → `review-turn` skill triages findings → user fixes → asks "re-run on new HEAD, or move to CR?" → on move-on, posts a summary comment on the PR documenting the round (findings, per-item decisions, fix commits) so CodeRabbit and human reviewers can see what Codex did. | `/ship` |
-| 4. CodeRabbit turn | **Parent:** base-flip + CR-existence polls (Monitor + bash). **Subagent (`coderabbit-shepherd`):** thread-resolution loop, `review-turn` per thread, GraphQL resolve mutation. Returns `{status: 'all_resolved' \| 'head_changed' \| 'failed'}`. | `/ship` + `coderabbit-shepherd` |
-| 5. Ready-to-merge | Verifies `state==OPEN`, `isDraft==false`, `baseRef==dev`, all checks green. | `/ship` |
-| 6. Merge handoff | Prints a "ready to merge" summary (title, URL, status) and stops. Never auto-merges. Notifications and merge are the user's responsibility. | `/ship` |
+| `coderabbit-shepherd` | `/ship` Stage 4 | Threads-only resolve loop. Calls `review-turn` per thread, posts replies + GraphQL resolve mutations, returns `{status}` to the parent. |
 
-## Skills
+### `review-turn` — the shared review abstraction
 
-### `brainstorming-lite`
-
-Same discipline as full `superpowers:brainstorming` — context exploration, one-question-at-a-time clarification, 2–3 approaches with tradeoffs, section-by-section design approval — but skips the written spec file, spec self-review, and the `writing-plans` handoff. Executes directly after design approval. Used by `/start --lite`.
-
-### `prompt`
-
-Generate raw prompt material as input for brainstorming. Takes a task description, does a light context scan, checks if the task should be split into multiple prompts (based on complexity), asks for a destination (default `.prompts/`), then writes ready-to-paste prompt strings.
-
-### `learn`
-
-Extract non-obvious learnings from the current session and route each one to its canonical home as declared in the project's `CANONICAL.md`. If `CANONICAL.md` is missing, scaffolds one interactively by scanning the repo for directories that look like learning destinations. Two destinations are always included: gotchas (folder-level `AGENTS.md ## Gotchas`) and memory (agent's built-in memory system).
-
-### `review-turn`
-
-The plugin's core abstraction. Auto-invokes whenever any reviewer (Codex, CodeRabbit, manual) returns feedback. Wraps `superpowers:receiving-code-review` to enforce:
+Auto-invokes whenever any reviewer (Codex, CodeRabbit, manual) returns feedback. Wraps `superpowers:receiving-code-review` to enforce:
 
 - Verify each finding against codebase reality before agreeing.
 - No performative agreement (no "you're absolutely right!").
 - Recommend per-item: `fix` / `decline` / `defer` / `clarify` / `other`.
 - Present grouped by severity, collect user decisions, return them to the caller.
 
-Reused by both the Codex turn (Stage 3) and the CodeRabbit subagent (Stage 4).
-
-### `visualize-as-html`
-
-General-purpose viz skill. Auto-invokes when the user asks to *visualize*, *compare*, *present*, *dashboard*, *sketch*, or *walk through* something that would be richer as a rendered page than as markdown. Produces a single self-contained `.html` file in `/tmp`, opens it in the default browser.
-
-Patterns come from [ThariqS/html-effectiveness](https://github.com/ThariqS/html-effectiveness) — 20 curated artifact types (status reports, incident timelines, flowcharts, implementation plans, comparison sheets, etc.). The skill picks the closest pattern, optionally fetches the upstream example for structural reference, then generates a self-contained file (inline CSS + JS + SVG, no CDN, no trackers, system fonts only, dark-mode honest).
-
-Independent of the `/start` → `/ship` pipeline — use it any time. Example asks: *"Visualize the deploy pipeline as a flowchart"*, *"Draft a Monday status update for this branch"*, *"Compare these three caching strategies side-by-side"*.
+Reused by both the Codex turn (Stage 3) and the CodeRabbit subagent (Stage 4). Plug new reviewers (e.g., Gemini) through the same skill rather than reinventing the review flow.
 
 ## Conventions baked in
 
@@ -118,26 +153,32 @@ Independent of the `/start` → `/ship` pipeline — use it any time. Example as
 - Strict equality everywhere (`===` in TypeScript / `[ "$x" = "y" ]` in shell).
 - Codex runs once by default; re-run is an explicit prompt at end of turn.
 - CodeRabbit is hard-required at Stage 4; 30-min timeout if no review posts.
-- Stage 6 is hands-off: prints a summary and stops. Nothing is auto-merged. Notifications and merge are the user's responsibility.
+- Stage 6 is hands-off: prints a summary and stops. Nothing is auto-merged.
 
 ## Layout
 
 ```
 thought-shower/
-├── .claude-plugin/plugin.json
+├── .claude-plugin/plugin.json         # Manifest + hard deps
+├── .mcp.json                          # MCP server registration
+├── mcp-server.ts                      # Telegram bridge MCP entry (Bun)
 ├── README.md
+├── CHANGELOG.md
+├── AGENTS.md                          # Repo-wide guidance for agents (canonical)
+├── CLAUDE.md → AGENTS.md              # backward-compat symlink
+├── CANONICAL.md                       # /learn routing table
 ├── commands/{start,ship,thought-shower,status,resume}.md
-├── skills/brainstorming-lite/SKILL.md
-├── skills/prompt/SKILL.md
-├── skills/learn/SKILL.md
-├── skills/review-turn/SKILL.md
-├── skills/visualize-as-html/{SKILL.md, references/{patterns.md, template.html}}
+├── skills/{brainstorming-lite,prompt,learn,review-turn,visualize-as-html,telegram,telegram-on,telegram-off}/SKILL.md
 ├── agents/coderabbit-shepherd.md
 ├── scripts/{cr-fresh-review,cr-threads}.sh
-└── references/pitfalls.md
+├── scripts/telegram-bridge/           # Daemon + helpers (Bun)
+├── docs/superpowers/{plans,specs}/    # Brainstorming + plan artifacts
+├── .agents/rules/                     # Canonical project rules
+├── .claude/rules → ../.agents/rules   # symlink
+└── references/pitfalls.md             # Hard-won lessons
 ```
 
-Scripts are bundled assets — always invoked via `"${CLAUDE_PLUGIN_ROOT}/scripts/..."` so plugin updates don't break references.
+Bundled scripts are always invoked via `"${CLAUDE_PLUGIN_ROOT}/scripts/..."` so plugin updates don't break references.
 
 ## Pitfalls
 
@@ -145,21 +186,25 @@ The `coderabbit-shepherd` agent reads `references/pitfalls.md` on demand. Highli
 
 - `gh api --jq` does NOT accept `--arg`; inline shell expansion only.
 - Never `2>/dev/null` a poll command — silent failure is the worst class of bug here.
-- Subagents cannot spawn other subagents; the `coderabbit-shepherd` agent has no `Agent` tool.
+- Subagents cannot spawn other subagents; `coderabbit-shepherd` has no `Agent` tool.
 - Always `KillShell` every background poll before the agent returns.
 
 ## Why "thought-shower"?
 
 British idiom for a brainstorm — the kind that washes ideas onto the page. The plugin started as a PR-shipping pipeline; the name now covers the broader personal-workflow toolkit built around it.
 
-## Status & roadmap
+## Changelog
 
-v0.1.0 bundles the shipping pipeline and two skills. Likely directions for future versions:
+See [`CHANGELOG.md`](./CHANGELOG.md). Entries are prepended (newest first) and grouped by date. The plugin doesn't pin versions because Claude Code marketplace updates roll out automatically — readers should treat the changelog as a continuous log, not a release notes file.
 
-- More software-engineering workflow pieces (commands, pipelines, skills) added as the personal workflow evolves.
-- First-run verification of the shipping pipeline against a real PR.
+## Status & contributing
+
+Early and evolving. Likely directions:
+
+- More SWE workflow pieces (commands, pipelines, skills) as the personal workflow evolves.
+- First-run verification of the shipping pipeline against a wider variety of real PRs.
 - Optional `--skip-codex` flag on `/ship` for trivial PRs.
-- Optional alternative reviewers (e.g., Gemini, internal LLM reviewers) plug into the `review-turn` skill.
-- Pagination for inner comments inside CR threads (rare edge case, see `references/pitfalls.md` #9).
+- Optional alternative reviewers (e.g., Gemini, internal LLM reviewers) wired through the `review-turn` skill.
+- Pagination for inner comments inside CR threads (rare edge case, see `references/pitfalls.md`).
 
 Issues and PRs welcome.
