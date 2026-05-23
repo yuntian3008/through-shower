@@ -135,6 +135,74 @@ export class TelegramBot {
     await writeFile(destPath, buf);
   }
 
+  async sendPhoto(
+    chatId: number,
+    localPath: string,
+    caption?: string,
+    topicId?: number,
+  ) {
+    const form = await this.buildMediaForm(chatId, "photo", localPath, caption, topicId);
+    return this.callForm<TgMessage>("sendPhoto", form);
+  }
+
+  async sendDocument(
+    chatId: number,
+    localPath: string,
+    caption?: string,
+    topicId?: number,
+    filename?: string,
+  ) {
+    const form = await this.buildMediaForm(
+      chatId,
+      "document",
+      localPath,
+      caption,
+      topicId,
+      filename,
+    );
+    return this.callForm<TgMessage>("sendDocument", form);
+  }
+
+  private async buildMediaForm(
+    chatId: number,
+    field: "photo" | "document",
+    localPath: string,
+    caption: string | undefined,
+    topicId: number | undefined,
+    filename?: string,
+  ): Promise<FormData> {
+    const { basename } = await import("path");
+    const bunFile = Bun.file(localPath);
+    const name = filename ?? basename(localPath);
+    // Bun's FormData.append ignores the third `filename` arg for BunFile, so
+    // we materialise the bytes into a File object with the desired name.
+    const file = new File([await bunFile.arrayBuffer()], name, {
+      type: bunFile.type,
+    });
+    const form = new FormData();
+    form.append("chat_id", String(chatId));
+    if (topicId !== undefined) form.append("message_thread_id", String(topicId));
+    if (caption !== undefined) form.append("caption", caption);
+    form.append(field, file);
+    return form;
+  }
+
+  private async callForm<T>(method: string, form: FormData): Promise<T> {
+    const res = await fetch(`${this.url}/${method}`, {
+      method: "POST",
+      body: form,
+    });
+    const data = (await res.json()) as {
+      ok: boolean;
+      result: T;
+      description?: string;
+    };
+    if (!data.ok) {
+      throw new Error(`Telegram ${method}: ${data.description}`);
+    }
+    return data.result;
+  }
+
   private async call<T>(
     method: string,
     params?: Record<string, unknown>,
