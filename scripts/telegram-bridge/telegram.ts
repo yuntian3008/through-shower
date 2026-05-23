@@ -1,5 +1,21 @@
 const BASE = "https://api.telegram.org/bot";
 
+export interface PhotoSize {
+  file_id: string;
+  file_unique_id: string;
+  width: number;
+  height: number;
+  file_size?: number;
+}
+
+export interface TgDocument {
+  file_id: string;
+  file_unique_id: string;
+  file_name?: string;
+  mime_type?: string;
+  file_size?: number;
+}
+
 export interface TgMessage {
   message_id: number;
   message_thread_id?: number;
@@ -7,6 +23,9 @@ export interface TgMessage {
   chat: { id: number; title?: string; type: string };
   date: number;
   text?: string;
+  caption?: string;
+  photo?: PhotoSize[];
+  document?: TgDocument;
 }
 
 export interface TgCallbackQuery {
@@ -94,6 +113,26 @@ export class TelegramBot {
       "createForumTopic",
       { chat_id: chatId, name },
     );
+  }
+
+  async getFile(fileId: string) {
+    return this.call<{ file_id: string; file_path?: string }>("getFile", {
+      file_id: fileId,
+    });
+  }
+
+  async downloadFile(filePath: string, destPath: string): Promise<void> {
+    const { mkdir, writeFile } = await import("node:fs/promises");
+    const { dirname } = await import("path");
+    await mkdir(dirname(destPath), { recursive: true });
+    // File downloads use /file/bot<TOKEN>/ not /bot<TOKEN>/
+    const fileUrl = this.url.replace("/bot", "/file/bot") + "/" + filePath;
+    const res = await fetch(fileUrl);
+    if (!res.ok) {
+      throw new Error(`downloadFile ${res.status}: ${await res.text()}`);
+    }
+    const buf = new Uint8Array(await res.arrayBuffer());
+    await writeFile(destPath, buf);
   }
 
   private async call<T>(
