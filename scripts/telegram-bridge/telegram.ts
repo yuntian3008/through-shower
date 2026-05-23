@@ -174,8 +174,9 @@ export class TelegramBot {
     const { basename } = await import("path");
     const bunFile = Bun.file(localPath);
     const name = filename ?? basename(localPath);
-    // Bun's FormData.append ignores the third `filename` arg for BunFile, so
-    // we materialise the bytes into a File object with the desired name.
+    // Bun's FormData.append ignores the 3rd filename arg for BunFile, so we
+    // materialise the bytes into a real File. The whole file buffers into
+    // memory — Telegram's 50 MB upload cap is the practical bound.
     const file = new File([await bunFile.arrayBuffer()], name, {
       type: bunFile.type,
     });

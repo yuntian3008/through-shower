@@ -103,6 +103,17 @@ describe("TelegramBot.sendPhoto", () => {
     expect(capturedBody?.get("message_thread_id")).toBe("5");
     expect(capturedBody?.get("photo")).toBeInstanceOf(File);
   });
+
+  test("should throw with Telegram method + description on !ok response", async () => {
+    globalThis.fetch = mock(async (..._args: unknown[]) => {
+      return new Response(JSON.stringify({ ok: false, description: "FLOOD_WAIT" }));
+    }) as unknown as typeof fetch;
+
+    const bot = new TelegramBot("TOKEN");
+    await expect(bot.sendPhoto(-100, photoPath)).rejects.toThrow(
+      "Telegram sendPhoto: FLOOD_WAIT",
+    );
+  });
 });
 
 describe("TelegramBot.sendDocument", () => {

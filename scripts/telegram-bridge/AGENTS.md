@@ -12,7 +12,7 @@ Implements the Telegram bridge daemon and its supporting modules. The daemon pol
 | `markdown.ts` | MarkdownV2 escaping for outgoing messages |
 | `cli.ts` | `bun cli.ts` commands: `setup`, `start`, `stop`, `status` |
 | `store.spec.ts` | Unit tests for store helpers (sanitizeFilename, mediaPath, gcInboxMedia) |
-| `telegram.spec.ts` | Unit tests for TelegramBot (getFile, downloadFile) |
+| `telegram.spec.ts` | Unit tests for TelegramBot (getFile, downloadFile, sendPhoto, sendDocument) |
 
 ## State layout (lives outside plugin cache)
 
@@ -38,4 +38,6 @@ Implements the Telegram bridge daemon and its supporting modules. The daemon pol
 - Dynamic `import("node:fs/promises")` is used in places where the symbol isn't needed at module load time (GC, pending/response helpers); static `mkdir` import covers the hot path.
 - `TelegramBot.getFile(fileId)` returns `{ file_id, file_path? }` — call this first, then pass the returned `file_path` to `downloadFile`.
 - `TelegramBot.downloadFile(filePath, destPath)` derives the download URL by replacing `/bot` with `/file/bot` in the stored base URL — the Telegram file endpoint is different from the method endpoint.
+- `TelegramBot.sendPhoto` and `TelegramBot.sendDocument` post multipart via `buildMediaForm` (builds the `FormData`) and `callForm` (POSTs and throws on `!ok`).
+- `buildMediaForm` materialises `BunFile` bytes into a `File` object to preserve the filename — Bun's `FormData.append` ignores the third arg for `BunFile`.
 - `TgMessage` carries `caption?`, `photo?: PhotoSize[]`, and `document?: TgDocument` for multimedia messages. `PhotoSize` and `TgDocument` are exported interfaces.
