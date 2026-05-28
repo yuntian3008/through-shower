@@ -4,6 +4,10 @@ Continuous log of changes to thought-shower. Newest entries first.
 Plugin updates automatically via the marketplace — there are no version pins.
 Categories follow [Conventional Commits](https://www.conventionalcommits.org/) types.
 
+## 2026-05-28
+
+- **feat(ship)**: Stage 3 now dispatches a new `thought-shower:codex-reviewer` agent that wraps `codex-companion.mjs review` (read-only) instead of `codex:codex-rescue` (write-capable task mode); right semantics for review, no behavior change to the triage flow
+
 ## 2026-05-23
 
 - **docs**: rewrite README capability-first; add CHANGELOG.md and doc-sync rule to AGENTS.md
